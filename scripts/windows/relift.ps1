@@ -29,7 +29,9 @@ if ($What -eq "ppu") {
         --insn-switches (Join-Path $Root "tools\ppu_switches.json") `
         -o (Join-Path $Root "src\recomp") 2>&1 | Tee-Object $Log
 } elseif ($What -eq "jobmods") {
-    $mods = Join-Path $Work "jobmods"
+    # the launcher's installation cuts them out of the EBOOT.ELF into input\jobmods
+    $mods = Join-Path $Root "input\jobmods"
+    if (-not (Test-Path $mods)) { $mods = Join-Path $Work "jobmods" }
     # Contiguous chunks lift as one C function (~10 -> ~12 fps in the level),
     # and module 218's functions with a native version call it (ps3kit
     # libs\spu_hle\gowa_drawcmd\native_functions.txt).

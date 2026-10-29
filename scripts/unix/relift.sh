@@ -3,7 +3,7 @@
 #
 #   scripts/mac/relift.sh ppu          # the PPU code -> src/recomp (under a minute)
 #   scripts/mac/relift.sh spu          # the 4 embedded SPU images and the Wws policy module -> src/spu
-#   scripts/mac/relift.sh jobmods      # the 33 job modules in work/jobmods -> src/spu/jobmod_*
+#   scripts/mac/relift.sh jobmods      # the 33 job modules (input/jobmods, else work/jobmods) -> src/spu/jobmod_*
 #   scripts/mac/relift.sh fragments    # tools/job_fragments.json -> src/spu/pic_*
 #   scripts/mac/relift.sh all          # all four
 # Linux: scripts/linux/relift.sh (same steps).
@@ -19,6 +19,9 @@ top=$(cd "$here/.." && pwd)
 tools="$PS3KIT_DIR/tools"
 spu="$here/src/spu"
 elf=${EBOOT_ELF:-$here/input/EBOOT.ELF}
+# the job modules: the launcher's installation cuts them out of the EBOOT.ELF into input/jobmods
+jobmods="$here/input/jobmods"
+[ -d "$jobmods" ] || jobmods="$WORK_DIR/jobmods"
 if [ -z "$PYTHON" ]; then
     if [ -x "$top/.venv/bin/python" ]; then PYTHON="$top/.venv/bin/python"; else PYTHON=python3; fi
 fi
@@ -45,7 +48,7 @@ lift() {
     jobmods)
         # merged chunks and module 218's native functions, as relift.ps1
         LIFT_JOBMODS_MERGE=1 LIFT_NATIVE="$PS3KIT_DIR/libs/spu_hle/gowa_drawcmd/native_functions.txt" \
-        "$PYTHON" "$tools/lift_jobmods.py" --jobmods "$WORK_DIR/jobmods" --out "$spu" \
+        "$PYTHON" "$tools/lift_jobmods.py" --jobmods "$jobmods" --out "$spu" \
             --register "$spu/jobmods_register.c" --symbol-prefix ascension \
             --extra-funcs-json "$here/tools/jobmods_extra_funcs.json" > "$log" 2>&1 ;;
     fragments)
