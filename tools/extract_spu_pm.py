@@ -41,6 +41,7 @@ def main():
     ap.add_argument('--size', type=lambda s: int(s, 0), required=True)
     ap.add_argument('--fnv', type=lambda s: int(s, 0), help='expected FNV-1a-64 of the bytes')
     ap.add_argument('--base', type=lambda s: int(s, 0), default=0xA00)
+    ap.add_argument('--kit', help='the toolkit (default: ps3kit or ps3recomp beside this repository)')
     a = ap.parse_args()
 
     blob = read_va(open(a.elf, 'rb').read(), a.address, a.size)
@@ -51,8 +52,8 @@ def main():
     raw = a.out + '.bin'
     open(raw, 'wb').write(blob)
     top = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
-    kit = 'ps3kit' if os.path.isdir(os.path.join(top, 'ps3kit')) else 'ps3recomp'   # the toolkit beside this repo
-    wrap = os.path.join(top, kit, 'tools', 'wrap_spu_elf.py')
+    kit = a.kit or os.path.join(top, 'ps3kit' if os.path.isdir(os.path.join(top, 'ps3kit')) else 'ps3recomp')
+    wrap = os.path.join(kit, 'tools', 'wrap_spu_elf.py')
     subprocess.run([sys.executable, wrap, raw, '--base', hex(a.base), '--entry', hex(a.base), '--out', a.out], check=True)
     os.remove(raw)
 
