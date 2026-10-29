@@ -6,6 +6,7 @@
     python tools/setup.py --steps meta,ppu     # some steps
     python tools/setup.py --hashes out.json    # the SHA-256 of what the steps generate (meta/, src/), to compare
                                                # two machines' outputs; nothing is made
+    python tools/setup.py --hashes out.json --compare theirs.json   # and what differs from theirs
 
 Reads input/EBOOT.ELF and input/jobmods/ (the launcher's installation makes them from the disc). The toolkit is
 ps3kit/ inside this folder or beside it (--ps3kit). Needs only Python's standard library.
@@ -305,6 +306,22 @@ def hashes(out):
     with open(out, 'w') as f:
         json.dump(dict(sorted(table.items())), f, indent=1)
     print(f'{len(table)} files -> {out}')
+    return table
+
+
+def compare(mine, ref_file):
+    """What differs from another machine's --hashes file: 0 when nothing."""
+    ref = json.load(open(ref_file))
+    only_mine = sorted(set(mine) - set(ref))
+    only_ref = sorted(set(ref) - set(mine))
+    differ = sorted(k for k in set(mine) & set(ref) if mine[k] != ref[k])
+    for title, items in (('only here', only_mine), (f'only in {os.path.basename(ref_file)}', only_ref), ('different', differ)):
+        if items:
+            print(f'{title}: {len(items)}')
+            for k in items[:40]:
+                print(f'  {k}')
+    print('the same' if not (only_mine or only_ref or differ) else 'DIFFERENT')
+    return 0 if not (only_mine or only_ref or differ) else 1
 
 
 def main():
@@ -318,9 +335,11 @@ def main():
                     help='parallel compiles (each lifted PPU unit takes 1-2 GB; default: half the CPUs, at most 4)')
     ap.add_argument('--native', action='store_true', help='the lifted code for this CPU only (-march=native)')
     ap.add_argument('--hashes', metavar='OUT', help='write the generated files\' hashes and stop')
+    ap.add_argument('--compare', metavar='REF', help='with --hashes: list what differs from another --hashes file')
     a = ap.parse_args()
     if a.hashes:
-        return hashes(a.hashes)
+        table = hashes(a.hashes)
+        return compare(table, a.compare) if a.compare else 0
     steps = [s.strip() for s in a.steps.split(',') if s.strip()]
     for s in steps:
         if s not in STEPS:
