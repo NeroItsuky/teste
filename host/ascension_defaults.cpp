@@ -139,7 +139,9 @@ unsigned logical_cpus()
 void set_default(const char* name, const char* value)
 {
 #ifdef _WIN32
-    if (GetEnvironmentVariableA(name, nullptr, 0)) return;
+    // set but empty counts as set (the launcher's PS3_OVERLAY_FONT= keeps Cinzel off)
+    SetLastError(0);
+    if (GetEnvironmentVariableA(name, nullptr, 0) || GetLastError() != ERROR_ENVVAR_NOT_FOUND) return;
     SetEnvironmentVariableA(name, value);
 #else
     setenv(name, value, 0);

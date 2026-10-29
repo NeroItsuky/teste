@@ -31,10 +31,12 @@ lift() {
     case $what in
     ppu)
         [ -f "$elf" ] || { echo "no $elf" >&2; exit 1; }
-        # --reg-locals as relift.ps1: guest registers in C locals.
+        # --reg-locals as relift.ps1: guest registers in C locals. --insn-switches:
+        # the GOWA_* environment switches (the launcher's effects, the scheduler's wait).
         "$PYTHON" "$tools/ppu_lifter.py" "$elf" --functions "$here/meta/functions.json" \
             --hle-stubs "$here/meta/EBOOT.imports.json" --toc 0x81EF60 --code-end 0x62C4CC \
-            --chunk-lines 150000 --reg-locals -o "$here/src/recomp" > "$log" 2>&1 ;;
+            --chunk-lines 150000 --reg-locals --insn-switches "$here/tools/ppu_switches.json" \
+            -o "$here/src/recomp" > "$log" 2>&1 ;;
     spu)
         "$PYTHON" "$tools/build_spu_workloads.py" --images "$here/meta/spu" --lifted "$spu" \
             --out "$spu/spu_workloads.c" --register-fn ascension_spu_register_all --constructor \
