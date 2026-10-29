@@ -286,15 +286,22 @@ STAMP_DIR = {'meta': ('meta',), 'ppu': ('src', 'recomp'), 'spu': ('src', 'spu'),
 RUN = {'meta': step_meta, 'ppu': step_ppu, 'spu': step_spu, 'configure': step_configure, 'compile': step_compile}
 
 
+TEXT = ('.c', '.cpp', '.h', '.json', '.txt')
+
+
 def hashes(out):
-    """Every generated file's SHA-256 by its path: meta/ and src/, to compare with another machine's."""
+    """Every generated file's SHA-256 by its path: meta/ and src/, to compare with another machine's (text with
+    LF line ends)."""
     table = {}
     for top in (path('meta'), path('src')):
         for d, _, fs in os.walk(top):
             for f in fs:
                 if f != '.setup-stamp':
                     p = os.path.join(d, f)
-                    table[os.path.relpath(p, ROOT).replace('\\', '/')] = sha256_file(p)
+                    data = open(p, 'rb').read()
+                    if f.endswith(TEXT):   # Windows writes the lifters' text with CRLF
+                        data = data.replace(b'\r\n', b'\n')
+                    table[os.path.relpath(p, ROOT).replace('\\', '/')] = hashlib.sha256(data).hexdigest()
     with open(out, 'w') as f:
         json.dump(dict(sorted(table.items())), f, indent=1)
     print(f'{len(table)} files -> {out}')
